@@ -47,11 +47,11 @@ const checkUserStatus = async (req, res, next) => {
       return res.status(403).json({ message: 'User is deleted' });
     }
 
-    // ✅ Update last_login
     await pool.query(
-      'UPDATE users SET last_login = NOW() WHERE id = $1',
+      'UPDATE task4_app.users SET last_login = NOW() WHERE id = $1',
       [userId]
     );
+    
 
     req.user = decoded;
     next();
