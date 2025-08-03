@@ -23,9 +23,9 @@ const checkUserStatus = async (req, res, next) => {
 
     console.log(`✅ JWT verified. Decoded userId: ${userId}`);
 
-    await pool.query('SET search_path TO task4_app, public');
+    // ❗️No longer rely on search_path — explicitly reference schema
     const result = await pool.query(
-      'SELECT status FROM users WHERE id = $1',
+      'SELECT status FROM task4_app.users WHERE id = $1',
       [userId]
     );
 
@@ -47,11 +47,11 @@ const checkUserStatus = async (req, res, next) => {
       return res.status(403).json({ message: 'User is deleted' });
     }
 
+    // ✅ Update last_login timestamp
     await pool.query(
       'UPDATE task4_app.users SET last_login = NOW() WHERE id = $1',
       [userId]
     );
-    
 
     req.user = decoded;
     next();
@@ -62,4 +62,3 @@ const checkUserStatus = async (req, res, next) => {
 };
 
 module.exports = checkUserStatus;
-
