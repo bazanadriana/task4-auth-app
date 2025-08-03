@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { LogIn, Users } from 'lucide-react';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -13,7 +15,7 @@ const LoginForm = () => {
     setError('');
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/login', {
+      const res = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -21,6 +23,9 @@ const LoginForm = () => {
 
       if (!res.ok) {
         const errorData = await res.json();
+        if (res.status === 403 || res.status === 401) {
+          localStorage.removeItem('token');
+        }
         throw new Error(errorData.message || 'Login failed');
       }
 
@@ -32,7 +37,7 @@ const LoginForm = () => {
         throw new Error('Token missing in response');
       }
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Network error. Please try again.');
     }
   };
 
@@ -43,6 +48,10 @@ const LoginForm = () => {
           <LogIn className="text-blue-600" />
           <h1 className="text-lg font-semibold">Login</h1>
         </div>
+        <Link to="/users" className="flex items-center space-x-1 text-blue-600 hover:underline">
+          <Users size={18} />
+          <span>User List</span>
+        </Link>
       </nav>
 
       <div className="flex justify-center items-center mt-12">

@@ -7,33 +7,42 @@ const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 
-// ✅ Allow multiple trusted origins
+// --- Dynamic CORS origin check ---
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://688f122a03a5b6aa98773305--task4-frontend.netlify.app',
-  'https://task4-frontend.netlify.app'
+  'https://task4-frontend.netlify.app',
 ];
 
+const dynamicOrigin = (origin, callback) => {
+  // Allow undefined origins (like curl/Postman)
+  if (!origin) return callback(null, true);
+
+  // Accept Netlify deploy preview domains
+  if (/^https:\/\/[\w-]+--task4-frontend\.netlify\.app$/.test(origin)) {
+    return callback(null, true);
+  }
+
+  // Allow explicit whitelisted origins
+  if (allowedOrigins.includes(origin)) {
+    return callback(null, true);
+  }
+
+  // Otherwise, block
+  return callback(new Error(`❌ CORS denied for origin: ${origin}`), false);
+};
+
 app.use(cors({
-  origin: function (origin, callback) {
-    // allow requests with no origin (like mobile apps or curl)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    } else {
-      console.warn(`Blocked CORS origin: ${origin}`);
-      return callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true
+  origin: dynamicOrigin,
+  credentials: true,
 }));
 
 app.use(express.json());
 
+// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 
-// ✅ Do not serve frontend, Netlify does that
+// Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
