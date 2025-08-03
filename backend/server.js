@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const pool = require('./db'); // make sure DATABASE_URL is used in db.js
+const pool = require('./db/db'); // make sure DATABASE_URL is used in db.js
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 
