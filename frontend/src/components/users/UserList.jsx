@@ -11,18 +11,24 @@ function UserList() {
 
   const fetchUsers = async () => {
     const token = localStorage.getItem('token');
+
     if (!token) {
+      console.warn('🚫 No token found in localStorage');
       navigate('/login');
       return;
     }
+
+    console.log('📦 Sending token:', token);
 
     try {
       const res = await fetch(`${API_URL}/api/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      console.log('🔄 GET /users response status:', res.status);
+
       if (res.status === 401 || res.status === 403) {
-        console.warn(`Redirecting to login: status ${res.status}`);
+        console.warn(`🔒 Unauthorized access: ${res.status}`);
         localStorage.removeItem('token');
         navigate('/login');
         return;
@@ -60,6 +66,7 @@ function UserList() {
   const handleAction = async (action) => {
     const token = localStorage.getItem('token');
     if (!token) {
+      console.warn('🚫 No token found before action');
       navigate('/login');
       return;
     }
@@ -74,8 +81,10 @@ function UserList() {
         body: JSON.stringify({ ids: selectedIds }),
       });
 
+      console.log(`🔧 POST /users/${action} response status:`, res.status);
+
       if (res.status === 401 || res.status === 403) {
-        console.warn(`Redirecting to login: status ${res.status}`);
+        console.warn(`🔒 Action unauthorized: ${res.status}`);
         localStorage.removeItem('token');
         navigate('/login');
         return;
@@ -98,9 +107,15 @@ function UserList() {
       <h2 className="text-xl font-bold mb-4">User List</h2>
 
       <div className="mb-4 space-x-2">
-        <button onClick={() => handleAction('block')} className="bg-red-500 text-white px-4 py-1 rounded">Block</button>
-        <button onClick={() => handleAction('unblock')} className="bg-green-500 text-white px-4 py-1 rounded">Unblock</button>
-        <button onClick={() => handleAction('delete')} className="bg-gray-700 text-white px-4 py-1 rounded">Delete</button>
+        <button onClick={() => handleAction('block')} className="bg-red-500 text-white px-4 py-1 rounded">
+          Block
+        </button>
+        <button onClick={() => handleAction('unblock')} className="bg-green-500 text-white px-4 py-1 rounded">
+          Unblock
+        </button>
+        <button onClick={() => handleAction('delete')} className="bg-gray-700 text-white px-4 py-1 rounded">
+          Delete
+        </button>
         <button onClick={handleSelectAll} className="ml-4 bg-blue-500 text-white px-3 py-1 rounded">
           {selectedIds.length === users.length ? 'Unselect All' : 'Select All'}
         </button>
@@ -118,7 +133,7 @@ function UserList() {
           </tr>
         </thead>
         <tbody>
-          {(Array.isArray(users) ? users : []).map(u => (
+          {users.map((u) => (
             <tr key={u.id} className="border-t">
               <td className="p-2">
                 <input
@@ -131,7 +146,9 @@ function UserList() {
               <td className="p-2">{u.name}</td>
               <td className="p-2">{u.email}</td>
               <td className="p-2">{u.status}</td>
-              <td className="p-2">{u.last_login ? new Date(u.last_login).toLocaleString() : '—'}</td>
+              <td className="p-2">
+                {u.last_login ? new Date(u.last_login).toLocaleString() : '—'}
+              </td>
             </tr>
           ))}
         </tbody>
