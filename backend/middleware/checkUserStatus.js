@@ -1,4 +1,3 @@
-// middleware/checkUserStatus.js
 const jwt = require('jsonwebtoken');
 const pool = require('../db/db');
 
@@ -6,6 +5,9 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 const checkUserStatus = async (req, res, next) => {
   const authHeader = req.headers.authorization;
+
+  // 🔍 Log the incoming Authorization header
+  console.log(`🔐 Incoming Authorization header: ${authHeader}`);
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     console.warn(`⚠️ Unauthorized attempt: Missing or invalid token - ${new Date().toISOString()}`);
@@ -15,8 +17,11 @@ const checkUserStatus = async (req, res, next) => {
   const token = authHeader.split(' ')[1];
 
   try {
+    // 🔍 Verify JWT
     const decoded = jwt.verify(token, JWT_SECRET);
     const userId = decoded.userId;
+
+    console.log(`✅ JWT verified. Decoded userId: ${userId}`);
 
     await pool.query('SET search_path TO task4_app, public');
     const result = await pool.query(
@@ -30,6 +35,7 @@ const checkUserStatus = async (req, res, next) => {
     }
 
     const { status } = result.rows[0];
+    console.log(`👤 User status: ${status}`);
 
     if (status === 'blocked') {
       console.warn(`⛔ Blocked user access: ID ${userId} - ${new Date().toISOString()}`);
@@ -41,7 +47,7 @@ const checkUserStatus = async (req, res, next) => {
       return res.status(403).json({ message: 'User is deleted' });
     }
 
-    // ✅ Update last_login timestamp
+    // ✅ Update last_login
     await pool.query(
       'UPDATE users SET last_login = NOW() WHERE id = $1',
       [userId]
@@ -50,7 +56,7 @@ const checkUserStatus = async (req, res, next) => {
     req.user = decoded;
     next();
   } catch (err) {
-    console.error(`❌ Token verification failed - ${err.message} - ${new Date().toISOString()}`);
+    console.error(`❌ Token verification failed: ${err.message} - ${new Date().toISOString()}`);
     return res.status(401).json({ message: 'Invalid or expired token' });
   }
 };
