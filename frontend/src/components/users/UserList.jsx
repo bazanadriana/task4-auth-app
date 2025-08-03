@@ -11,6 +11,11 @@ function UserList() {
 
   const fetchUsers = async () => {
     const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
     try {
       const res = await fetch(`${API_URL}/api/users`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -26,14 +31,15 @@ function UserList() {
       const data = await res.json();
 
       if (!Array.isArray(data)) {
-        console.error('Unexpected response format (not array):', data);
-        setUsers([]); // fallback to empty list
+        console.error('⚠️ Expected array but got:', data);
+        setUsers([]);
         return;
       }
 
       setUsers(data);
     } catch (err) {
       console.error('❌ Failed to fetch users:', err);
+      setUsers([]);
     }
   };
 
@@ -53,6 +59,11 @@ function UserList() {
 
   const handleAction = async (action) => {
     const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
     try {
       const res = await fetch(`${API_URL}/api/users/${action}`, {
         method: 'POST',
@@ -107,7 +118,7 @@ function UserList() {
           </tr>
         </thead>
         <tbody>
-          {users.map(u => (
+          {(Array.isArray(users) ? users : []).map(u => (
             <tr key={u.id} className="border-t">
               <td className="p-2">
                 <input
