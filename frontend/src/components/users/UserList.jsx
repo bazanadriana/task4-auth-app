@@ -16,13 +16,21 @@ function UserList() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (res.status === 403) {
+      if (res.status === 401 || res.status === 403) {
+        console.warn(`Redirecting to login: status ${res.status}`);
         localStorage.removeItem('token');
         navigate('/login');
         return;
       }
 
       const data = await res.json();
+
+      if (!Array.isArray(data)) {
+        console.error('Unexpected response format (not array):', data);
+        setUsers([]); // fallback to empty list
+        return;
+      }
+
       setUsers(data);
     } catch (err) {
       console.error('❌ Failed to fetch users:', err);
@@ -55,7 +63,8 @@ function UserList() {
         body: JSON.stringify({ ids: selectedIds }),
       });
 
-      if (res.status === 403) {
+      if (res.status === 401 || res.status === 403) {
+        console.warn(`Redirecting to login: status ${res.status}`);
         localStorage.removeItem('token');
         navigate('/login');
         return;

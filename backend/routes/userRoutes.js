@@ -1,8 +1,10 @@
+// routes/userRoutes.js
 const express = require('express');
 const router = express.Router();
 const pool = require('../db/db');
 const checkUserStatus = require('../middleware/checkUserStatus');
 
+// GET /api/users
 router.get('/', checkUserStatus, async (req, res) => {
   try {
     await pool.query('SET search_path TO task4_app, public');
@@ -18,8 +20,13 @@ router.get('/', checkUserStatus, async (req, res) => {
   }
 });
 
+// POST /api/users/block
 router.post('/block', checkUserStatus, async (req, res) => {
   const { ids } = req.body;
+  if (!Array.isArray(ids)) {
+    return res.status(400).json({ error: 'Invalid or missing "ids" array' });
+  }
+
   try {
     await pool.query('SET search_path TO task4_app, public');
     await pool.query(
@@ -33,8 +40,13 @@ router.post('/block', checkUserStatus, async (req, res) => {
   }
 });
 
+// POST /api/users/unblock
 router.post('/unblock', checkUserStatus, async (req, res) => {
   const { ids } = req.body;
+  if (!Array.isArray(ids)) {
+    return res.status(400).json({ error: 'Invalid or missing "ids" array' });
+  }
+
   try {
     await pool.query('SET search_path TO task4_app, public');
     await pool.query(
@@ -48,8 +60,13 @@ router.post('/unblock', checkUserStatus, async (req, res) => {
   }
 });
 
+// POST /api/users/delete
 router.post('/delete', checkUserStatus, async (req, res) => {
   const { ids } = req.body;
+  if (!Array.isArray(ids)) {
+    return res.status(400).json({ error: 'Invalid or missing "ids" array' });
+  }
+
   try {
     await pool.query('SET search_path TO task4_app, public');
     await pool.query(
