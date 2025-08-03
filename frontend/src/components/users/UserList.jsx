@@ -21,11 +21,11 @@ function UserList() {
     console.log('📦 Sending token:', token);
 
     try {
-      const res = await fetch(`${API_URL}/users`, {
+      const res = await fetch(`${API_URL}/api/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log('🔄 GET /users response status:', res.status);
+      console.log('🔄 GET /api/users response status:', res.status);
 
       if (res.status === 401 || res.status === 403) {
         console.warn(`🔒 Unauthorized access: ${res.status}`);
@@ -50,8 +50,8 @@ function UserList() {
   };
 
   const handleSelect = (id) => {
-    setSelectedIds(prev =>
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
     );
   };
 
@@ -59,7 +59,7 @@ function UserList() {
     if (selectedIds.length === users.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(users.map(u => u.id));
+      setSelectedIds(users.map((u) => u.id));
     }
   };
 
@@ -81,7 +81,7 @@ function UserList() {
         body: JSON.stringify({ ids: selectedIds }),
       });
 
-      console.log(`🔧 POST /users/${action} response status:`, res.status);
+      console.log(`🔧 POST /api/users/${action} response status:`, res.status);
 
       if (res.status === 401 || res.status === 403) {
         console.warn(`🔒 Action unauthorized: ${res.status}`);
