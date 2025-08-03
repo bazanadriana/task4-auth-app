@@ -21,7 +21,7 @@ function UserList() {
     console.log('📦 Sending token:', token);
 
     try {
-      const res = await fetch(`${API_URL}/api/users`, {
+      const res = await fetch(`${API_URL}/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
