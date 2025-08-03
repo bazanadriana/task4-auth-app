@@ -1,7 +1,7 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
-
+const pool = require('./db'); // make sure DATABASE_URL is used in db.js
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 
@@ -14,20 +14,13 @@ const allowedOrigins = [
 ];
 
 const dynamicOrigin = (origin, callback) => {
-  // Allow undefined origins (like curl/Postman)
   if (!origin) return callback(null, true);
-
-  // Accept Netlify deploy preview domains
   if (/^https:\/\/[\w-]+--task4-frontend\.netlify\.app$/.test(origin)) {
     return callback(null, true);
   }
-
-  // Allow explicit whitelisted origins
   if (allowedOrigins.includes(origin)) {
     return callback(null, true);
   }
-
-  // Otherwise, block
   return callback(new Error(`❌ CORS denied for origin: ${origin}`), false);
 };
 
@@ -37,6 +30,16 @@ app.use(cors({
 }));
 
 app.use(express.json());
+
+// --- Test DB connection on startup ---
+pool.connect()
+  .then(client => {
+    console.log('✅ Connected to PostgreSQL');
+    client.release();
+  })
+  .catch(err => {
+    console.error('❌ Failed to connect to PostgreSQL:', err.message);
+  });
 
 // Routes
 app.use('/api/auth', authRoutes);
