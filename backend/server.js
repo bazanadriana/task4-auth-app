@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
@@ -8,17 +7,36 @@ const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// ✅ Allow multiple origins
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://688f0b8176be91798a098463--task4-frontend.netlify.app'
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true, // needed if you're using cookies or Authorization headers
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
-// API Routes only — Netlify serves frontend
+// ✅ API routes only — Netlify serves frontend
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 
-// Do NOT serve frontend (Netlify handles that)
+// ✅ (Optional) Basic test route
+app.get('/api/test', (req, res) => {
+  res.json({ message: '✅ Backend is working!' });
+});
 
-// Start server
+// ✅ Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
