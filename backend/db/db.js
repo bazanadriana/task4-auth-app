@@ -7,7 +7,7 @@ const pool = new Pool({
 });
 
 pool.on('connect', (client) => {
-  client.query('SET search_path TO public');
+  client.query('SET search_path TO task4_app');
 });
 
 module.exports = pool;
