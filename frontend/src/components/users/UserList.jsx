@@ -7,60 +7,74 @@ const API_URL = import.meta.env.VITE_API_URL;
 function UserList() {
   const [users, setUsers] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
+  const [currentUserId, setCurrentUserId] = useState(null);
   const [selectAll, setSelectAll] = useState(false);
   const navigate = useNavigate();
-
-  const fetchUsers = async () => {
-    const token = localStorage.getItem('token');
-    try {
-      const res = await fetch(`${API_URL}/api/users`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.status === 403) {
-        localStorage.removeItem('token');
-        navigate('/login');
-        return;
-      }
-      const data = await res.json();
-      setUsers(data || []);
-    } catch (err) {
-      console.error('Failed to fetch users:', err);
-      setUsers([]);
-    }
-  };
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
-  const toggleSelectAll = () => {
-    if (selectAll) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(users.map((user) => user.id));
+  const fetchUsers = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.warn('No token found');
+      navigate('/login');
+      return;
     }
-    setSelectAll(!selectAll);
+
+    try {
+      const res = await fetch(`${API_URL}/api/users`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.status === 403 || res.status === 401) {
+        localStorage.removeItem('token');
+        navigate('/login');
+        return;
+      }
+
+      const data = await res.json();
+      const decoded = JSON.parse(atob(token.split('.')[1]));
+      setCurrentUserId(decoded.userId);
+      setUsers(data);
+    } catch (err) {
+      console.error('Failed to fetch users:', err.message);
+    }
   };
 
-  const toggleSelectOne = (id) => {
+  const handleSelectAll = () => {
+    const newSelectAll = !selectAll;
+    setSelectAll(newSelectAll);
+    if (newSelectAll) {
+      const nonCurrentIds = users.filter(u => u.id !== currentUserId).map(u => u.id);
+      setSelectedIds(nonCurrentIds);
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleCheckboxChange = (userId) => {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((uid) => uid !== id) : [...prev, id]
+      prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
     );
   };
 
-  const updateUserStatus = async (action) => {
+  const sendAction = async (endpoint) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_URL}/api/users/${action}`, {
+      const res = await fetch(`${API_URL}/api/users/${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ userIds: selectedIds }),
+        body: JSON.stringify({ ids: selectedIds }),
       });
 
-      if (res.status === 403) {
+      if (res.status === 403 || res.status === 401) {
         localStorage.removeItem('token');
         navigate('/login');
         return;
@@ -70,101 +84,94 @@ function UserList() {
       setSelectedIds([]);
       setSelectAll(false);
     } catch (err) {
-      console.error(`Error during ${action}:`, err);
+      console.error(`Failed to ${endpoint} users:`, err.message);
     }
   };
 
-  const formatDateTime = (timestamp) => {
-    const date = new Date(timestamp);
-    return date.toLocaleString(undefined, {
-      month: 'numeric',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  };
-
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 pt-16">
       <NavigationHeader />
-      <div className="max-w-6xl mx-auto p-4">
-        <div className="mb-4 flex gap-2">
+      <div className="max-w-6xl mx-auto px-4">
+        <div className="flex items-center space-x-2 py-4">
           <button
-            onClick={() => updateUserStatus('block')}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            onClick={() => sendAction('block')}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded"
           >
             Block
           </button>
           <button
-            onClick={() => updateUserStatus('delete')}
-            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+            onClick={() => sendAction('unblock')}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded"
+          >
+            Unblock
+          </button>
+          <button
+            onClick={() => sendAction('delete')}
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded"
           >
             Delete
           </button>
         </div>
-        <div className="bg-white shadow rounded overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 text-sm text-left">
-            <thead className="bg-gray-50">
-              <tr>
+        <div className="bg-white shadow rounded-lg overflow-x-auto">
+          <table className="min-w-full table-auto text-sm text-left">
+            <thead>
+              <tr className="bg-gray-200 text-gray-700">
                 <th className="px-4 py-2">
                   <input
                     type="checkbox"
                     checked={selectAll}
-                    onChange={toggleSelectAll}
+                    onChange={handleSelectAll}
                   />
                 </th>
-                <th className="px-4 py-2 font-semibold text-gray-700">Name</th>
-                <th className="px-4 py-2 font-semibold text-gray-700">Email</th>
-                <th className="px-4 py-2 font-semibold text-gray-700">Status</th>
-                <th className="px-4 py-2 font-semibold text-gray-700">Last Login</th>
+                <th className="px-4 py-2">Name</th>
+                <th className="px-4 py-2">Email</th>
+                <th className="px-4 py-2">Status</th>
+                <th className="px-4 py-2">Last Login</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
-              {Array.isArray(users) && users.length > 0 ? (
-                users.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
+            <tbody>
+              {users.map(user => {
+                const isSelected = selectedIds.includes(user.id);
+                const isCurrent = user.id === currentUserId;
+
+                return (
+                  <tr key={user.id} className="border-t hover:bg-gray-50">
                     <td className="px-4 py-2">
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.includes(user.id)}
-                        onChange={() => toggleSelectOne(user.id)}
-                      />
+                      {!isCurrent && (
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleCheckboxChange(user.id)}
+                        />
+                      )}
                     </td>
-                    <td className="px-4 py-2 text-gray-900">{user.name}</td>
-                    <td className="px-4 py-2 text-gray-900">{user.email}</td>
-                    <td className="px-4 py-2">
-                      <span
-                        className={`font-medium ${
-                          user.status === 'active'
-                            ? 'text-green-600'
-                            : user.status === 'blocked'
-                            ? 'text-yellow-600'
-                            : 'text-red-600'
-                        }`}
-                      >
-                        {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
-                      </span>
+                    <td className="px-4 py-2">{user.name || 'N/A'}</td>
+                    <td className="px-4 py-2">{user.email}</td>
+                    <td className="px-4 py-2 font-semibold text-sm" style={{ color: getStatusColor(user.status) }}>
+                      {user.status}
                     </td>
-                    <td className="px-4 py-2 text-gray-700">
-                      {user.last_login ? formatDateTime(user.last_login) : '—'}
-                    </td>
+                    <td className="px-4 py-2">{formatDate(user.last_login)}</td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="5" className="px-4 py-4 text-center text-gray-500">
-                    No users found.
-                  </td>
-                </tr>
-              )}
+                );
+              })}
             </tbody>
           </table>
         </div>
       </div>
     </div>
   );
+}
+
+function formatDate(dateString) {
+  if (!dateString) return 'Never';
+  const date = new Date(dateString);
+  return date.toLocaleString();
+}
+
+function getStatusColor(status) {
+  if (status === 'Active') return 'green';
+  if (status === 'Blocked') return 'orange';
+  return 'red';
 }
 
 export default UserList;
