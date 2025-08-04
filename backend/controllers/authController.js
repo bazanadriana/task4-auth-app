@@ -7,8 +7,6 @@ const registerUser = async (req, res) => {
   const { name, email, password } = req.body;
 
   try {
-    await pool.query("SET search_path TO task4_app");
-
     const existingUser = await pool.query(
       'SELECT 1 FROM users WHERE email = $1',
       [email]
