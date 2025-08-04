@@ -8,7 +8,7 @@ const registerUser = async (req, res) => {
 
   try {
     const existingUser = await pool.query(
-      'SELECT 1 FROM users WHERE email = $1',
+      'SELECT 1 FROM task4_app.users WHERE email = $1',
       [email]
     );
 
@@ -19,7 +19,7 @@ const registerUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await pool.query(
-      'INSERT INTO users (name, email, password) VALUES ($1, $2, $3)',
+      'INSERT INTO task4_app.users (name, email, password) VALUES ($1, $2, $3)',
       [name, email, hashedPassword]
     );
 
@@ -35,14 +35,13 @@ const registerUser = async (req, res) => {
   }
 };
 
+
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    await pool.query("SET search_path TO task4_app");
-
     const result = await pool.query(
-      'SELECT * FROM users WHERE email = $1',
+      'SELECT * FROM task4_app.users WHERE email = $1',
       [email]
     );
 
@@ -66,7 +65,7 @@ const loginUser = async (req, res) => {
     }
 
     await pool.query(
-      'UPDATE users SET last_login = NOW() WHERE id = $1',
+      'UPDATE task4_app.users SET last_login = NOW() WHERE id = $1',
       [user.id]
     );
 
