@@ -1,82 +1,88 @@
-// routes/userRoutes.js
 const express = require('express');
 const router = express.Router();
 const pool = require('../db/db');
 const checkUserStatus = require('../middleware/checkUserStatus');
 
-// GET /api/users
+// ✅ GET all users (requires auth)
 router.get('/', checkUserStatus, async (req, res) => {
   try {
-    await pool.query('SET search_path TO task4_app, public');
-    const result = await pool.query(`
-      SELECT id, name, email, status, is_blocked, is_deleted, created_at, last_login
-      FROM users
-      ORDER BY id ASC
-    `);
-    res.json(result.rows);
+    const result = await pool.query(
+      'SELECT id, name, email, is_admin, is_blocked, is_deleted, last_login FROM users ORDER BY last_login DESC NULLS LAST'
+    );
+
+    const users = result.rows.map(u => ({
+      ...u,
+      status: u.is_deleted
+        ? 'Deleted'
+        : u.is_blocked
+        ? 'Blocked'
+        : 'Active',
+    }));
+
+    res.json(users);
   } catch (err) {
     console.error('❌ Failed to fetch users:', err.message);
-    res.status(500).json({ error: 'Failed to fetch users' });
+    res.status(500).json({ message: 'Failed to load users' });
   }
 });
 
-// POST /api/users/block
+// ✅ Block users by IDs
 router.post('/block', checkUserStatus, async (req, res) => {
   const { ids } = req.body;
-  if (!Array.isArray(ids)) {
-    return res.status(400).json({ error: 'Invalid or missing "ids" array' });
+
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ message: 'No user IDs provided' });
   }
 
   try {
-    await pool.query('SET search_path TO task4_app, public');
     await pool.query(
-      `UPDATE users SET status = 'blocked', is_blocked = true WHERE id = ANY($1::int[])`,
+      'UPDATE users SET is_blocked = true WHERE id = ANY($1::int[])',
       [ids]
     );
-    res.json({ success: true });
+    res.json({ message: 'Users blocked successfully' });
   } catch (err) {
     console.error('❌ Failed to block users:', err.message);
-    res.status(500).json({ error: 'Failed to block users' });
+    res.status(500).json({ message: 'Error blocking users' });
   }
 });
 
-// POST /api/users/unblock
+// ✅ Unblock users by IDs
 router.post('/unblock', checkUserStatus, async (req, res) => {
   const { ids } = req.body;
-  if (!Array.isArray(ids)) {
-    return res.status(400).json({ error: 'Invalid or missing "ids" array' });
+
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ message: 'No user IDs provided' });
   }
 
   try {
-    await pool.query('SET search_path TO task4_app, public');
     await pool.query(
-      `UPDATE users SET status = 'active', is_blocked = false WHERE id = ANY($1::int[])`,
+      'UPDATE users SET is_blocked = false WHERE id = ANY($1::int[])',
       [ids]
     );
-    res.json({ success: true });
+    res.json({ message: 'Users unblocked successfully' });
   } catch (err) {
     console.error('❌ Failed to unblock users:', err.message);
-    res.status(500).json({ error: 'Failed to unblock users' });
+    res.status(500).json({ message: 'Error unblocking users' });
   }
 });
 
-// POST /api/users/delete
+// ✅ Delete users by IDs
 router.post('/delete', checkUserStatus, async (req, res) => {
   const { ids } = req.body;
-  if (!Array.isArray(ids)) {
-    return res.status(400).json({ error: 'Invalid or missing "ids" array' });
+
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ message: 'No user IDs provided' });
   }
 
   try {
-    await pool.query('SET search_path TO task4_app, public');
     await pool.query(
-      `UPDATE users SET status = 'deleted', is_deleted = true WHERE id = ANY($1::int[])`,
+      'UPDATE users SET is_deleted = true WHERE id = ANY($1::int[])',
       [ids]
     );
-    res.json({ success: true });
+    res.json({ message: 'Users deleted successfully' });
   } catch (err) {
     console.error('❌ Failed to delete users:', err.message);
-    res.status(500).json({ error: 'Failed to delete users' });
+    res.status(500).json({ message: 'Error deleting users' });
   }
 });
 
