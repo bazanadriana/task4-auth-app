@@ -1,3 +1,4 @@
+// backend/middleware/checkUserStatus.js
 const jwt = require('jsonwebtoken');
 const pool = require('../db/db');
 
@@ -22,6 +23,7 @@ const checkUserStatus = async (req, res, next) => {
     const userId = decoded.userId;
     console.log(`✅ JWT verified. Decoded userId: ${userId}`);
 
+    // ✅ Fixed query: use actual column names
     const result = await pool.query(
       'SELECT is_blocked, is_deleted FROM users WHERE id = $1',
       [userId]
@@ -45,7 +47,6 @@ const checkUserStatus = async (req, res, next) => {
       return res.status(403).json({ message: 'User is deleted' });
     }
 
-    // Update last_login
     try {
       await pool.query(
         'UPDATE users SET last_login = NOW() WHERE id = $1',
