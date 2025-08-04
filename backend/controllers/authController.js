@@ -2,11 +2,12 @@ const pool = require('../db/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-// Sign up
+// Register new user
 const registerUser = async (req, res) => {
   const { name, email, password } = req.body;
 
   try {
+    // Check if email already exists
     const existingUser = await pool.query(
       'SELECT * FROM users WHERE email = $1',
       [email]
@@ -16,6 +17,7 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'Email already exists' });
     }
 
+    // Hash password and insert user
     const hashedPassword = await bcrypt.hash(password, 10);
 
     await pool.query(
@@ -25,12 +27,12 @@ const registerUser = async (req, res) => {
 
     res.status(201).json({ message: 'User registered successfully' });
   } catch (err) {
-    console.error('Registration error:', err.message);
+    console.error('Registration error:', err);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
 
-// Log in
+// Login existing user
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
@@ -60,12 +62,13 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Update last_login
+    // Track last login
     await pool.query(
       'UPDATE users SET last_login = NOW() WHERE id = $1',
       [user.id]
     );
 
+    // Generate token
     const token = jwt.sign(
       { userId: user.id, email: user.email, is_admin: user.is_admin },
       process.env.JWT_SECRET,
@@ -74,7 +77,7 @@ const loginUser = async (req, res) => {
 
     res.json({ token });
   } catch (err) {
-    console.error('Login error:', err.message);
+    console.error('Login error:', err);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
