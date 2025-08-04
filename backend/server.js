@@ -7,26 +7,24 @@ const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 
-// --- CORS config ---
 const allowedOrigins = [
   'http://localhost:5173',
-  'http://localhost:5174', // 👈 Added port 5174 (used in your screenshot)
+  'http://localhost:5174',
   'https://task4-frontend.netlify.app',
 ];
 
 const dynamicOrigin = (origin, callback) => {
-  if (!origin) return callback(null, true); // Postman/cURL
+  if (!origin) return callback(null, true); 
   if (/^https:\/\/[\w-]+--task4-frontend\.netlify\.app$/.test(origin)) {
-    return callback(null, true); // Netlify deploy previews
+    return callback(null, true); 
   }
   if (allowedOrigins.includes(origin)) {
-    return callback(null, true); // Known frontends
+    return callback(null, true);
   }
   console.warn(`❌ CORS denied for origin: ${origin}`);
   return callback(new Error(`CORS denied for origin: ${origin}`), false);
 };
 
-// Log incoming origin for debugging
 app.use((req, res, next) => {
   console.log(`🌐 Request from origin: ${req.headers.origin}`);
   next();
@@ -35,7 +33,6 @@ app.use((req, res, next) => {
 app.use(cors({ origin: dynamicOrigin, credentials: true }));
 app.use(express.json());
 
-// --- Test DB connection ---
 pool.connect()
   .then(client => {
     console.log('✅ Connected to PostgreSQL');
@@ -45,11 +42,13 @@ pool.connect()
     console.error('❌ Failed to connect to PostgreSQL:', err.message);
   });
 
-// --- Routes ---
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 
-// --- Start server on Render-provided port ---
+app.get('/', (req, res) => {
+  res.send('✅ Task 4 backend is running.');
+});
+
 const PORT = process.env.PORT;
 if (!PORT) {
   console.error('❌ No PORT specified in environment. Render needs process.env.PORT');

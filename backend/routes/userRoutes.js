@@ -3,9 +3,10 @@ const router = express.Router();
 const pool = require('../db/db');
 const checkUserStatus = require('../middleware/checkUserStatus');
 
-// ✅ GET all users (requires auth)
+
 router.get('/', checkUserStatus, async (req, res) => {
   try {
+    await pool.query('SET search_path TO task4_app');
     const result = await pool.query(
       'SELECT id, name, email, is_admin, is_blocked, is_deleted, last_login FROM users ORDER BY last_login DESC NULLS LAST'
     );
@@ -26,15 +27,14 @@ router.get('/', checkUserStatus, async (req, res) => {
   }
 });
 
-// ✅ Block users by IDs
 router.post('/block', checkUserStatus, async (req, res) => {
   const { ids } = req.body;
-
   if (!Array.isArray(ids) || ids.length === 0) {
     return res.status(400).json({ message: 'No user IDs provided' });
   }
 
   try {
+    await pool.query('SET search_path TO task4_app');
     await pool.query(
       'UPDATE users SET is_blocked = true WHERE id = ANY($1::int[])',
       [ids]
@@ -46,15 +46,14 @@ router.post('/block', checkUserStatus, async (req, res) => {
   }
 });
 
-// ✅ Unblock users by IDs
 router.post('/unblock', checkUserStatus, async (req, res) => {
   const { ids } = req.body;
-
   if (!Array.isArray(ids) || ids.length === 0) {
     return res.status(400).json({ message: 'No user IDs provided' });
   }
 
   try {
+    await pool.query('SET search_path TO task4_app');
     await pool.query(
       'UPDATE users SET is_blocked = false WHERE id = ANY($1::int[])',
       [ids]
@@ -66,15 +65,14 @@ router.post('/unblock', checkUserStatus, async (req, res) => {
   }
 });
 
-// ✅ Delete users by IDs
 router.post('/delete', checkUserStatus, async (req, res) => {
   const { ids } = req.body;
-
   if (!Array.isArray(ids) || ids.length === 0) {
     return res.status(400).json({ message: 'No user IDs provided' });
   }
 
   try {
+    await pool.query('SET search_path TO task4_app');
     await pool.query(
       'UPDATE users SET is_deleted = true WHERE id = ANY($1::int[])',
       [ids]
