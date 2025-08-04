@@ -42,7 +42,7 @@ function UserList() {
 
     try {
       const token = localStorage.getItem("token");
-      await fetch(`${API_URL}/users/${action}`, {
+      await fetch(`${API_URL}/api/users/${action}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -146,7 +146,11 @@ function UserList() {
                   </td>
                   <td className="px-4 py-2">{user.name}</td>
                   <td className="px-4 py-2">{user.email}</td>
-                  <td className={`px-4 py-2 font-semibold ${getStatusColor(user.status)}`}>
+                  <td
+                    className={`px-4 py-2 font-semibold ${getStatusColor(
+                      user.status
+                    )}`}
+                  >
                     {user.status}
                   </td>
                   <td className="px-4 py-2">
