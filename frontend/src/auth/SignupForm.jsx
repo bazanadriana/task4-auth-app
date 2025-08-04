@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { UserPlus, Users } from 'lucide-react';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const SignupForm = () => {
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [message, setMessage] = useState('');
@@ -16,7 +18,7 @@ const SignupForm = () => {
     setMessage('');
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/signup', {
+      const res = await fetch(`${API_URL}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
@@ -44,15 +46,17 @@ const SignupForm = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navbar */}
       <nav className="bg-white shadow flex justify-between items-center p-4">
         <div className="flex items-center space-x-2">
           <UserPlus className="text-green-600" />
           <h1 className="text-lg font-semibold">Signup</h1>
         </div>
+        <Link to="/users" className="flex items-center space-x-1 text-blue-600 hover:underline">
+          <Users size={18} />
+          <span>User List</span>
+        </Link>
       </nav>
 
-      {/* Form */}
       <div className="flex justify-center items-center mt-12">
         <div className="bg-white p-6 rounded shadow-md w-full max-w-sm">
           <h2 className="text-2xl font-bold mb-4 text-center">Sign Up</h2>
