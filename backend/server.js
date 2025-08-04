@@ -10,6 +10,7 @@ const app = express();
 // --- CORS config ---
 const allowedOrigins = [
   'http://localhost:5173',
+  'http://localhost:5174', // 👈 Added port 5174 (used in your screenshot)
   'https://task4-frontend.netlify.app',
 ];
 
@@ -21,8 +22,15 @@ const dynamicOrigin = (origin, callback) => {
   if (allowedOrigins.includes(origin)) {
     return callback(null, true); // Known frontends
   }
-  return callback(new Error(`❌ CORS denied for origin: ${origin}`), false);
+  console.warn(`❌ CORS denied for origin: ${origin}`);
+  return callback(new Error(`CORS denied for origin: ${origin}`), false);
 };
+
+// Log incoming origin for debugging
+app.use((req, res, next) => {
+  console.log(`🌐 Request from origin: ${req.headers.origin}`);
+  next();
+});
 
 app.use(cors({ origin: dynamicOrigin, credentials: true }));
 app.use(express.json());
@@ -41,8 +49,12 @@ pool.connect()
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 
-// --- Server Port ---
-const PORT = process.env.PORT || 5001;
+// --- Start server on Render-provided port ---
+const PORT = process.env.PORT;
+if (!PORT) {
+  console.error('❌ No PORT specified in environment. Render needs process.env.PORT');
+  process.exit(1);
+}
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);

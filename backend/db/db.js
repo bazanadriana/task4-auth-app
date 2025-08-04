@@ -1,4 +1,3 @@
-// backend/db/db.js
 require('dotenv').config();
 const { Pool } = require('pg');
 
@@ -7,6 +6,8 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-pool.query('SET search_path TO public'); // 👈 Force default schema
+pool.on('connect', (client) => {
+  client.query('SET search_path TO public');
+});
 
 module.exports = pool;

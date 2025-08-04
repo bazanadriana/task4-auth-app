@@ -23,7 +23,7 @@ const checkUserStatus = async (req, res, next) => {
     console.log(`✅ JWT verified. Decoded userId: ${userId}`);
 
     const result = await pool.query(
-      'SELECT status FROM task4_app.users WHERE id = $1',
+      'SELECT is_blocked, is_deleted FROM users WHERE id = $1',
       [userId]
     );
 
@@ -32,22 +32,23 @@ const checkUserStatus = async (req, res, next) => {
       return res.status(401).json({ message: 'User not found' });
     }
 
-    const { status } = result.rows[0];
-    console.log(`👤 User status: ${status}`);
+    const { is_blocked, is_deleted } = result.rows[0];
+    console.log(`👤 User status — Blocked: ${is_blocked}, Deleted: ${is_deleted}`);
 
-    if (status === 'blocked') {
+    if (is_blocked) {
       console.warn(`⛔ Blocked user ID ${userId}`);
       return res.status(403).json({ message: 'User is blocked' });
     }
 
-    if (status === 'deleted') {
+    if (is_deleted) {
       console.warn(`⛔ Deleted user ID ${userId}`);
       return res.status(403).json({ message: 'User is deleted' });
     }
 
+    // Update last_login
     try {
       await pool.query(
-        'UPDATE task4_app.users SET last_login = NOW() WHERE id = $1',
+        'UPDATE users SET last_login = NOW() WHERE id = $1',
         [userId]
       );
     } catch (e) {
