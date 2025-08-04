@@ -41,12 +41,8 @@ pool.connect()
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 
-// --- Start server on Render-provided port ---
-const PORT = process.env.PORT;
-if (!PORT) {
-  console.error('❌ No PORT specified in environment. Render needs process.env.PORT');
-  process.exit(1);
-}
+// --- Server Port ---
+const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
