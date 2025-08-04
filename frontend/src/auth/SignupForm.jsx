@@ -51,10 +51,6 @@ const SignupForm = () => {
           <UserPlus className="text-green-600" />
           <h1 className="text-lg font-semibold">Signup</h1>
         </div>
-        <Link to="/users" className="flex items-center space-x-1 text-blue-600 hover:underline">
-          <Users size={18} />
-          <span>User List</span>
-        </Link>
       </nav>
 
       <div className="flex justify-center items-center mt-12">
