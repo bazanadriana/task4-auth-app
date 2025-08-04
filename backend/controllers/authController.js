@@ -2,73 +2,81 @@ const pool = require('../db/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
+// Sign up
 const registerUser = async (req, res) => {
   const { name, email, password } = req.body;
 
   try {
-    await pool.query('SET search_path TO task4_app, public');
-
     const existingUser = await pool.query(
       'SELECT * FROM users WHERE email = $1',
       [email]
     );
 
     if (existingUser.rows.length > 0) {
-      return res.status(400).json({ error: 'Email already exists' });
+      return res.status(400).json({ message: 'Email already exists' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = await pool.query(
-      'INSERT INTO users (name, email, password, status, created_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING *',
-      [name, email, hashedPassword, 'active']
+    await pool.query(
+      'INSERT INTO users (name, email, password) VALUES ($1, $2, $3)',
+      [name, email, hashedPassword]
     );
 
-    res.status(201).json({ message: 'User registered successfully', user: newUser.rows[0] });
+    res.status(201).json({ message: 'User registered successfully' });
   } catch (err) {
-    console.error('Registration error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Registration error:', err.message);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
+// Log in
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    await pool.query('SET search_path TO task4_app, public');
-
-    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    const result = await pool.query(
+      'SELECT * FROM users WHERE email = $1',
+      [email]
+    );
 
     if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     const user = result.rows[0];
 
-    if (user.status === 'blocked' || user.status === 'deleted') {
-      return res.status(403).json({ error: 'Access denied' });
+    if (user.is_deleted) {
+      return res.status(403).json({ message: 'Account deleted' });
     }
 
-    const passwordMatch = await bcrypt.compare(password, user.password);
-
-    if (!passwordMatch) {
-      return res.status(401).json({ error: 'Invalid email or password' });
+    if (user.is_blocked) {
+      return res.status(403).json({ message: 'Account blocked' });
     }
 
-    await pool.query('UPDATE users SET last_login = NOW() WHERE id = $1', [user.id]);
+    const isMatch = await bcrypt.compare(password, user.password);
 
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
-      expiresIn: '1h',
-    });
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Update last_login
+    await pool.query(
+      'UPDATE users SET last_login = NOW() WHERE id = $1',
+      [user.id]
+    );
+
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, is_admin: user.is_admin },
+      process.env.JWT_SECRET,
+      { expiresIn: '2h' }
+    );
 
     res.json({ token });
   } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Login error:', err.message);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
-module.exports = {
-  registerUser,
-  loginUser,
-};
+module.exports = { registerUser, loginUser };
